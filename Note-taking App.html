@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note-Taking App</title>
+	<link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .note {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .note-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+            padding: 5px;
+            border: 1px dashed #ccc;
+            border-radius: 3px;
+            background-color: #f9f9f9;
+        }
+        .note-content {
+            margin-top: 10px;
+            padding: 5px;
+            border: 1px dashed #ccc;
+            border-radius: 3px;
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Note-Taking App</h1>
+        <h3>Note Title</h3>
+        <textarea id="note-title-input" rows="1" placeholder="Enter note title..."></textarea>
+        <h4>Note</h4>
+        <textarea id="note-content-input" rows="5" placeholder="Enter note content..."></textarea>
+        <button id="add-note">Add Note</button>
+        <div id="notes-container"></div>
+    </div>
+
+    <script>
+        const notesContainer = document.getElementById('notes-container');
+        const addNoteButton = document.getElementById('add-note');
+        const noteTitleInput = document.getElementById('note-title-input');
+        const noteContentInput = document.getElementById('note-content-input');
+
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function saveNotes() {
+            const notes = [];
+            document.querySelectorAll('.note').forEach(note => {
+                const title = note.querySelector('.note-title').innerText.trim();
+                const content = note.querySelector('.note-content').innerText.trim();
+                notes.push({ title, content });
+            });
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        function loadNotes() {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            notes.reverse().forEach(noteData => {
+                createNoteElement(noteData.title, noteData.content);
+            });
+        }
+
+        function createNoteElement(titleText = getTodayDate(), contentText = 'No content') {
+            const note = document.createElement('div');
+            note.classList.add('note');
+
+            const title = document.createElement('div');
+            title.classList.add('note-title');
+            title.contentEditable = true;
+            title.innerText = titleText;
+
+            const content = document.createElement('div');
+            content.classList.add('note-content');
+            content.contentEditable = true;
+            content.innerText = contentText;
+
+            const editButton = document.createElement('button');
+            editButton.innerText = 'Edit Note';
+            editButton.onclick = () => {
+                title.contentEditable = true;
+                content.contentEditable = true;
+                title.focus();
+            };
+
+            const deleteButton = document.createElement('button');
+            deleteButton.innerText = 'Delete Note';
+            deleteButton.onclick = () => {
+                notesContainer.removeChild(note);
+                saveNotes();
+            };
+
+            note.appendChild(title);
+            note.appendChild(content);
+            note.appendChild(editButton);
+            note.appendChild(deleteButton);
+
+            notesContainer.prepend(note);
+
+            title.onblur = () => {
+                if (title.innerText.trim() === '') {
+                    title.innerText = getTodayDate();
+                }
+                title.contentEditable = false;
+                saveNotes();
+            };
+
+            content.onblur = () => {
+                if (content.innerText.trim() === '') {
+                    content.innerText = 'No content';
+                }
+                content.contentEditable = false;
+                saveNotes();
+            };
+        }
+
+        function createNote() {
+            const noteTitle = noteTitleInput.value.trim() || getTodayDate();
+            const noteContent = noteContentInput.value.trim() || 'No content';
+
+            createNoteElement(noteTitle, noteContent);
+
+            noteTitleInput.value = '';
+            noteContentInput.value = '';
+            saveNotes();
+        }
+
+        addNoteButton.addEventListener('click', createNote);
+        window.addEventListener('load', loadNotes);
+		
+		if ("serviceWorker" in navigator) {
+			navigator.serviceWorker
+			.register("./sw.js")
+			.then(() => console.log("Service Worker registered"))
+			.catch(err => console.error("Service Worker registration failed", err));
+		}
+    </script>
+</body>
+</html>
